@@ -12,8 +12,9 @@ module Circadex
       "comics" => nil,
       "crossword" => nil,
       "remarkable" => nil,
+      "paper" => { "name" => "The Circadex Chronicle", "masthead_font" => nil },
       "schedule" => { "hour" => 5, "minute" => 45 },
-      "news" => { "max_age_hours" => 36, "max_paragraphs" => 14, "sections" => [] }
+      "news" => { "max_age_hours" => 36, "max_paragraphs" => 14, "images" => true, "sections" => [] }
     }.freeze
 
     def self.load(path)

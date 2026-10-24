@@ -20,7 +20,7 @@ class AnalyticsTest < Minitest::Test
       query = payload[:query]
       account =
         if query.include?("d0:")
-          (0..7).to_h { |i| ["d#{i}", [{ "count" => [1200, 1000, 900, 1100, 1000, 950, 1050, 1000][i], "sum" => { "visits" => 400 - i * 10 } }]] }
+          (0..13).to_h { |i| ["d#{i}", [{ "count" => [1200, 1000, 900, 1100, 1000, 950, 1050, 1000, 500, 500, 500, 500, 500, 500][i], "sum" => { "visits" => 400 - i * 10 } }]] }
         elsif query.include?("requestPath")
           { "rows" => [{ "count" => 300, "dimensions" => { "requestPath" => "/" } }, { "count" => 120, "dimensions" => { "requestPath" => "/post" } }] }
         else
@@ -57,6 +57,32 @@ class AnalyticsTest < Minitest::Test
     assert_equal 20, Circadex::Sources::Analytics.change(site.views, site.prior_views)
     assert_equal [["/", 300], ["/post", 120]], site.pages
     assert_equal [["news.ycombinator.com", 80]], site.referrers
+    assert_nil site.notice
+  end
+
+  def test_history_has_fourteen_days_oldest_first
+    site = digest.first.sites.first
+
+    assert_equal 14, site.history.size
+    assert_equal Date.new(2026, 10, 10), site.history.first.first
+    assert_equal [Date.new(2026, 10, 23), 1200], site.history.last
+  end
+
+  def test_include_and_exclude_choose_sites_by_name_or_tag
+    assert_equal ["shop.example.test"], digest("include" => ["Shop.Example.Test"]).first.sites.map(&:name)
+    assert_equal ["blog.example.test"], digest("include" => ["tag-blog-0000000000"]).first.sites.map(&:name)
+    assert_equal ["shop.example.test"], digest("exclude" => ["blog.example.test"]).first.sites.map(&:name)
+    assert_empty digest("include" => ["nothing.example.test"]).first.sites
+  end
+
+  def test_breakdowns_that_are_not_shown_are_not_requested
+    seen = []
+    http = FakeHttp.new(SITES_URL => sites_body, GRAPHQL_URL => ->(payload) { seen << payload[:query]; graphql_responder.call(payload) })
+    site = Circadex::Sources::Analytics.new({ "show" => ["trend"] }, client: client(http), now: NOW).digest.sites.first
+
+    assert_empty site.pages
+    assert_empty site.referrers
+    refute(seen.any? { |q| q.include?("requestPath") || q.include?("refererHost") })
     assert_nil site.notice
   end
 

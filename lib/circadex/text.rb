@@ -2,21 +2,16 @@ require "nokogiri"
 
 module Circadex
   module Text
-    TRANSLITERATE = {
-      "‘" => "'", "’" => "'", "“" => '"', "”" => '"',
-      " " => " ", "​" => "", " " => " ", " " => " "
-    }.freeze
-
     module_function
 
     def squish(str)
       str.to_s.gsub(/[[:space:]]+/, " ").strip
     end
 
-    # Prawn's built-in fonts only cover Windows-1252, so anything else is dropped.
-    def clean(str)
-      str = str.to_s.gsub(/[‘’“” ​  ]/, TRANSLITERATE)
-      str.encode("Windows-1252", invalid: :replace, undef: :replace, replace: "").encode("UTF-8")
+    # Removes characters that only get in the way of layout; the renderer drops any
+    # remaining characters its fonts cannot draw.
+    def normalize(str)
+      str.to_s.gsub(/[\u200B-\u200D\uFEFF]/, "").tr("\u00A0\u2009\u202F", "   ")
     end
 
     def html_to_text(html)

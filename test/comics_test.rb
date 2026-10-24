@@ -1,5 +1,6 @@
 require "test_helper"
 require "base64"
+require "zlib"
 
 class ComicsTest < Minitest::Test
   PNG = Base64.decode64("iVBORw0KGgoAAAANSUhEUgAAABgAAAAICAIAAABsw6g0AAAAHklEQVR4nGM8YaPBQA3ARBVTqGkQ1QDj8A0jqhkEAA/mAmW2A+vsAAAAAElFTkSuQmCC")
@@ -146,5 +147,49 @@ class ImageFileTest < Minitest::Test
     converted = Circadex::ImageFile.printable(GIF)
 
     assert_equal :png, Circadex::ImageFile.kind(converted)
+  end
+end
+
+class ImageShrinkTest < Minitest::Test
+  def tool?
+    %w[sips magick convert].any? { |t| system("which #{t} > /dev/null 2>&1") }
+  end
+
+  def test_small_images_are_left_alone
+    small = ComicsTest::PNG
+
+    assert_same small, Circadex::ImageFile.shrink(small)
+  end
+
+  def test_non_jpeg_png_data_is_left_alone
+    gif = "GIF89a" + ("x" * 300_000)
+
+    assert_same gif, Circadex::ImageFile.shrink(gif)
+  end
+
+  def test_large_images_are_made_smaller_when_a_tool_exists
+    skip "no image tool installed" unless tool?
+    big = noise_png(1600, 1000)
+    assert_operator big.bytesize, :>, Circadex::ImageFile::SHRINK_OVER_BYTES
+
+    smaller = Circadex::ImageFile.shrink(big)
+
+    assert_operator smaller.bytesize, :<, big.bytesize
+    assert_equal :png, Circadex::ImageFile.kind(smaller)
+  end
+
+  private
+
+  # A grayscale PNG of random noise, built in plain Ruby so the test needs no image tools to make it.
+  def noise_png(width, height)
+    chunk = lambda do |type, data|
+      [data.bytesize].pack("N") + type + data + [Zlib.crc32(type + data)].pack("N")
+    end
+    random = Random.new(1)
+    rows = Array.new(height) { "\x00".b + random.bytes(width) }.join
+    "\x89PNG\r\n\x1a\n".b +
+      chunk.call("IHDR", [width, height, 8, 0, 0, 0, 0].pack("NNCCCCC")) +
+      chunk.call("IDAT", Zlib::Deflate.deflate(rows)) +
+      chunk.call("IEND", "".b)
   end
 end

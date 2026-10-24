@@ -43,6 +43,7 @@ module Circadex
             high: daily["temperature_2m_max"][i]&.round,
             low: daily["temperature_2m_min"][i]&.round,
             summary: CODES.fetch(daily["weather_code"][i], "Unsettled"),
+            code: daily["weather_code"][i],
             precip: daily["precipitation_probability_max"][i]
           )
         end

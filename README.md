@@ -1,6 +1,6 @@
-# The Circadex News
+# The Circadex Chronicle (the-circadex-news)
 
-A mini-app that builds a personal daily newspaper as a PDF: weather, news from public feeds, and (soon) mail, site analytics, comics and a crossword. The page size is set up for e-ink tablets, and the output is a single PDF with bookmarks per section.
+A mini-app that builds a personal daily newspaper as a PDF: a front page with weather, mail and site traffic, then news from public feeds, a crossword and comics. The page size is set up for e-ink tablets, and the output is a single PDF with a linked table of contents and bookmarks per section.
 
 ## Requirements
 
@@ -41,9 +41,17 @@ If a source is unreachable, the paper still builds and the failure is listed on 
 
 Mail is opened read-only and never marked as read. Messages are sorted by rules: senders in `priority_senders` and subjects matching alert keywords (bills, security notices) come first, then personal mail, then newsletters; promotions are counted and skipped. Nothing from your mailbox leaves your machine.
 
+## Pictures
+
+Stories with a picture in their feed (or an Open Graph image on the article page) show it; the first story with a picture becomes the lead on page one, and its text continues in its section. Large photos are scaled down with `sips` (macOS) or ImageMagick so the PDF stays small. Turn pictures off with `news.images: false`.
+
+## Look and feel
+
+The paper's name and masthead font come from `paper:` in `config.yml`. For a blackletter title, save any `.ttf` as `assets/fonts/masthead.ttf` (see `assets/fonts/README.md`); otherwise the title is set in bold serif. Body text uses the bundled Liberation fonts (SIL Open Font License).
+
 ## Analytics setup
 
-Cloudflare Web Analytics sites are listed automatically. Create an API token with *Account > Account Analytics > Read* and *Account > Account Settings > Read*, store `CLOUDFLARE_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` in the Keychain the same way as the mail credentials, and set `analytics.enabled: true`. The report shows yesterday's page views and visits against the day before and the previous seven days, with top pages and referrers. Cloudflare samples this data, so counts are estimates.
+Cloudflare Web Analytics sites are listed automatically. Create an API token with *Account > Account Analytics > Read* and *Account > Account Settings > Read*, store `CLOUDFLARE_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` in the Keychain the same way as the mail credentials, and set `analytics.enabled: true`. The report shows yesterday's page views and visits against the day before and the previous seven days, with a 14-day bar chart, top pages and referrers. Run `bin/circadex --list-sites` to see your site names, then choose with `analytics.include` / `exclude` (by name or tag) and what to show with `analytics.show: [trend, pages, referrers]`. Cloudflare samples this data, so counts are estimates.
 
 ## Comics setup
 

@@ -4,6 +4,12 @@
 timezone: America/New_York
 output_dir: output
 
+# The paper's name and optional masthead font. For a blackletter ("Old English") title, save a
+# .ttf as assets/fonts/masthead.ttf (see assets/fonts/README.md) or set masthead_font to its path.
+paper:
+  name: The Circadex Chronicle
+  # masthead_font: assets/fonts/masthead.ttf
+
 # Page size is in inches. These values match the reMarkable Paper Pro in portrait.
 page:
   width_in: 7.07
@@ -40,6 +46,11 @@ mail:
 # the account are included unless you list some here (then the Settings permission is not needed).
 analytics:
   enabled: false
+  # Only these sites (matched by name or tag). Leave out to include every Web Analytics site.
+  # include: [example.com]
+  # exclude: [staging.example.com]
+  # What to show for each site: trend (14-day chart), pages, referrers.
+  # show: [trend, pages]
   # sites:
   #   - { name: example.com, tag: 0123456789abcdef0123456789abcdef }
 
@@ -71,6 +82,7 @@ remarkable:
 news:
   max_age_hours: 36
   max_paragraphs: 14
+  images: true   # show article pictures (the first picture story leads page one)
   sections:
     - title: World
       full_articles: 3

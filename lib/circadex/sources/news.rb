@@ -53,7 +53,12 @@ module Circadex
         (0...longest).flat_map { |i| sorted.filter_map { |l| l[i] } }
       end
 
+      MAX_IMAGE_BYTES = 8_000_000
+      MAX_PDF_IMAGE_BYTES = 1_500_000
+
       def story_for(item)
+        page = Page.new(item, @http)
+        paragraphs = body_for(item, page)
         Story.new(
           title: item.title,
           url: item.url,
@@ -61,22 +66,57 @@ module Circadex
           byline: item.author.to_s.empty? ? nil : item.author,
           published: item.published,
           summary: item.summary,
-          paragraphs: body_for(item)
+          paragraphs: paragraphs,
+          image: images? ? image_for(item, page) : nil
         )
       end
 
-      def body_for(item)
+      def body_for(item, page)
         paragraphs = Text.html_to_paragraphs(item.content_html) if item.content_html
-        paragraphs = fetch_body(item) unless paragraphs && paragraphs.sum(&:length) >= MIN_FEED_BODY
+        paragraphs = Extract.paragraphs(page.html.to_s) unless paragraphs && paragraphs.sum(&:length) >= MIN_FEED_BODY
         paragraphs = [item.summary] if paragraphs.empty? && !item.summary.to_s.empty?
         paragraphs.first(@config["max_paragraphs"].to_i)
       end
 
-      def fetch_body(item)
-        Extract.paragraphs(@http.get(item.url))
+      # The feed's own picture if it has one, otherwise the article page's lead image.
+      def image_for(item, page)
+        url = item.image_url || Extract.image_url(page.html.to_s, item.url)
+        return unless url
+
+        bytes = @http.get(url, binary: true)
+        return if bytes.bytesize > MAX_IMAGE_BYTES
+
+        printable = ImageFile.printable(bytes)
+        printable &&= ImageFile.shrink(printable)
+        return if printable.nil? || printable.bytesize > MAX_PDF_IMAGE_BYTES
+
+        printable
       rescue Http::Error => e
-        Circadex.logger.warn("article #{item.url}: #{e.message}")
-        []
+        Circadex.logger.warn("image for #{item.url}: #{e.message}")
+        nil
+      end
+
+      def images?
+        @config["images"] != false
+      end
+
+      # Fetches an article page at most once, however many times its text or image is needed.
+      class Page
+        def initialize(item, http)
+          @item = item
+          @http = http
+          @loaded = false
+        end
+
+        def html
+          return @html if @loaded
+
+          @loaded = true
+          @html = @http.get(@item.url)
+        rescue Http::Error => e
+          Circadex.logger.warn("article #{@item.url}: #{e.message}")
+          @html = nil
+        end
       end
 
       def notice_for(section, items, errors)

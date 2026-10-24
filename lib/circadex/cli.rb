@@ -14,15 +14,24 @@ module Circadex
         o.on("-c", "--config PATH", "Config file (default: #{DEFAULT_CONFIG})") { |v| options[:config] = v }
         o.on("-o", "--out DIR", "Output directory (overrides config)") { |v| options[:out] = v }
         o.on("-d", "--date YYYY-MM-DD", "Edition date (default: today)") { |v| options[:date] = Date.iso8601(v) }
+        o.on("--list-sites", "List your Cloudflare Web Analytics sites (names and tags) and exit") { options[:list_sites] = true }
         o.on("--no-upload", "Build the PDF but do not send it to the tablet") { options[:upload] = false }
         o.on("-v", "--version") { puts Circadex::VERSION; return 0 }
       end
       parser.parse!(argv)
 
-      build(options)
-    rescue Config::Error, OptionParser::ParseError, Date::Error => e
+      options[:list_sites] ? list_sites(options) : build(options)
+    rescue Config::Error, Sources::Analytics::Error, Http::Error, OptionParser::ParseError, Date::Error => e
       warn "circadex: #{e.message}"
       1
+    end
+
+    def list_sites(options, client: nil)
+      config = Config.load(options[:config])
+      sites = (client || Builder.new(config).cloudflare_client).sites
+      puts(sites.empty? ? "No Web Analytics sites found in this account." : sites.map { |s| "#{s['name']}  (#{s['tag']})" })
+      puts "\nTo show only some of them, list names under `analytics.include:` in #{options[:config]}."
+      0
     end
 
     def build(options)

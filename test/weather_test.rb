@@ -14,7 +14,7 @@ class WeatherTest < Minitest::Test
     forecast = weather.fetch
 
     assert_equal "Providence, RI", forecast.location
-    assert_equal [61, 47, "Partly cloudy", 10], forecast.today.to_a.drop(1)
+    assert_equal [61, 47, "Partly cloudy", 10, 2], forecast.today.to_a.drop(1)
     assert_equal 5, forecast.upcoming.size
     assert_equal Date.new(2026, 10, 25), forecast.upcoming.first.date
     assert_equal "Thunderstorms", forecast.upcoming.last.summary

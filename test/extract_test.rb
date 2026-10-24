@@ -19,4 +19,16 @@ class ExtractTest < Minitest::Test
   def test_returns_empty_for_pages_without_text
     assert_empty Circadex::Sources::Extract.paragraphs("<html><body></body></html>")
   end
+
+  def test_image_url_prefers_open_graph_and_resolves_relative_addresses
+    html = '<html><head><meta property="og:image" content="/img/lead.jpg"></head><body><article><img src="/img/other.jpg"></article></body></html>'
+
+    assert_equal "https://news.test/img/lead.jpg", Circadex::Sources::Extract.image_url(html, "https://news.test/story/1")
+  end
+
+  def test_image_url_falls_back_to_the_article_image_or_nil
+    assert_equal "https://news.test/a.png", Circadex::Sources::Extract.image_url('<article><img src="a.png"></article>', "https://news.test/")
+    assert_nil Circadex::Sources::Extract.image_url("<html><body><p>No pictures</p></body></html>", "https://news.test/")
+    assert_nil Circadex::Sources::Extract.image_url("<html></html>", "not a url")
+  end
 end

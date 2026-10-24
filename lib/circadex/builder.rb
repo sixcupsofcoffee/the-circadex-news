@@ -31,6 +31,18 @@ module Circadex
                   notices: notices)
     end
 
+    # Used by `bin/circadex --list-sites` to show which Web Analytics sites exist.
+    def cloudflare_client
+      account_id = Secrets.fetch("CLOUDFLARE_ACCOUNT_ID")
+      unless account_id.match?(/\A[0-9a-f]{32}\z/i)
+        raise Config::Error,
+              "CLOUDFLARE_ACCOUNT_ID should be the 32-character account ID from the Cloudflare dashboard " \
+              "(it may hold an API token instead)"
+      end
+
+      Sources::CloudflareClient.new(account_id: account_id, token: Secrets.fetch("CLOUDFLARE_TOKEN"), http: @http)
+    end
+
     private
 
     def enabled?(label, key)
@@ -42,17 +54,6 @@ module Circadex
 
     def analytics_digest
       Sources::Analytics.new(@config["analytics"], client: @analytics_client || cloudflare_client, now: @now).digest
-    end
-
-    def cloudflare_client
-      account_id = Secrets.fetch("CLOUDFLARE_ACCOUNT_ID")
-      unless account_id.match?(/\A[0-9a-f]{32}\z/i)
-        raise Config::Error,
-              "CLOUDFLARE_ACCOUNT_ID should be the 32-character account ID from the Cloudflare dashboard " \
-              "(it may hold an API token instead)"
-      end
-
-      Sources::CloudflareClient.new(account_id: account_id, token: Secrets.fetch("CLOUDFLARE_TOKEN"), http: @http)
     end
 
     def mail_digest

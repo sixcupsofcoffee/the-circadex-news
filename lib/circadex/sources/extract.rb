@@ -1,4 +1,5 @@
 require "nokogiri"
+require "uri"
 
 module Circadex
   module Sources
@@ -16,6 +17,19 @@ module Circadex
         return [] unless root
 
         root.css("p").map { |p| Text.squish(p.text) }.select { |p| p.length >= MIN_PARAGRAPH }
+      end
+
+      # The article's lead picture: Open Graph / Twitter card image, else the first image in the article.
+      def image_url(html, base_url)
+        doc = Nokogiri::HTML(html)
+        src = doc.at_css('meta[property="og:image"], meta[name="og:image"], meta[name="twitter:image"], meta[property="twitter:image"]')&.[]("content") ||
+              doc.at_css("article img[src]")&.[]("src")
+        return if src.to_s.strip.empty?
+
+        url = URI.join(base_url, src.strip).to_s
+        url.start_with?("http") ? url : nil
+      rescue URI::Error
+        nil
       end
 
       def densest_container(doc)

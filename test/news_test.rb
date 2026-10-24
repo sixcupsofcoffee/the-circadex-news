@@ -1,4 +1,5 @@
 require "test_helper"
+require "base64"
 
 class NewsTest < Minitest::Test
   include Fixtures
@@ -77,5 +78,45 @@ class NewsTest < Minitest::Test
     section = news({ "https://feeds.test/a" => a, "https://feeds.test/b" => b }, [section_config(feeds, full: 0, briefs: 10)]).sections.first
 
     assert_equal 2, section.briefs.size
+  end
+
+  PNG = Base64.decode64("iVBORw0KGgoAAAANSUhEUgAAABgAAAAICAIAAABsw6g0AAAAHklEQVR4nGM8YaPBQA3ARBVTqGkQ1QDj8A0jqhkEAA/mAmW2A+vsAAAAAElFTkSuQmCC")
+
+  def image_feed(image_xml)
+    %(<?xml version="1.0"?><rss version="2.0" xmlns:media="http://search.yahoo.com/mrss/"><channel><item><title>Pic story</title><link>https://example.test/pic</link>
+      <pubDate>Sat, 24 Oct 2026 09:30:00 -0400</pubDate><description>Short.</description>#{image_xml}</item></channel></rss>)
+  end
+
+  def story_with(responses, config_extra = {})
+    feeds = [{ "name" => "Wire", "url" => "https://feeds.test/a" }]
+    cfg = config([section_config(feeds, full: 1, briefs: 0)]).merge(config_extra)
+    Circadex::Sources::News.new(cfg, http: FakeHttp.new(responses), now: NOW).sections.first.stories.first
+  end
+
+  def test_story_gets_the_feeds_picture
+    story = story_with("https://feeds.test/a" => image_feed('<media:content url="https://img.test/p.png" medium="image"/>'), "https://img.test/p.png" => PNG)
+
+    assert_equal PNG, story.image
+  end
+
+  def test_story_falls_back_to_the_article_pages_picture
+    page = '<html><head><meta property="og:image" content="https://img.test/og.png"></head><body><article><p>' + ("Body text here. " * 12) + "</p></article></body></html>"
+    http = FakeHttp.new("https://feeds.test/a" => image_feed(""), "https://example.test/pic" => page, "https://img.test/og.png" => PNG)
+    story = Circadex::Sources::News.new(config([section_config([{ "name" => "Wire", "url" => "https://feeds.test/a" }], full: 1, briefs: 0)]), http: http, now: NOW).sections.first.stories.first
+
+    assert_equal PNG, story.image
+    assert_equal 1, http.requests.count("https://example.test/pic"), "the page should be fetched only once"
+  end
+
+  def test_missing_or_unsupported_picture_leaves_the_story_without_one
+    assert_nil story_with("https://feeds.test/a" => image_feed('<media:content url="https://img.test/gone.png" medium="image"/>')).image
+    assert_nil story_with("https://feeds.test/a" => image_feed('<media:content url="https://img.test/x.png" medium="image"/>'), "https://img.test/x.png" => "<html>not an image</html>").image
+  end
+
+  def test_images_can_be_turned_off
+    feed = image_feed('<media:content url="https://img.test/p.png" medium="image"/>')
+    story = story_with({ "https://feeds.test/a" => feed, "https://img.test/p.png" => PNG }, "images" => false)
+
+    assert_nil story.image
   end
 end
