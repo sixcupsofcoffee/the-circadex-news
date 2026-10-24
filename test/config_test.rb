@@ -19,6 +19,27 @@ class ConfigTest < Minitest::Test
     assert_match(/config.example.yml/, error.message)
   end
 
+  def test_yaml_syntax_error_becomes_a_one_line_message_naming_the_suspect_line
+    Dir.mktmpdir do |dir|
+      path = File.join(dir, "config.yml")
+      File.write(path, "# settings\ntimezone: America/New_York\n schedule:\n  hour: 5\nremarkable:\n  enabled: true\n")
+
+      error = assert_raises(Circadex::Config::Error) { Circadex::Config.load(path) }
+      assert_match(/not valid YAML/, error.message)
+      assert_match(/near line 3/, error.message)
+      assert_match(/schedule/, error.message)
+    end
+  end
+
+  def test_non_mapping_config_is_rejected
+    Dir.mktmpdir do |dir|
+      path = File.join(dir, "config.yml")
+      File.write(path, "- just\n- a list\n")
+
+      assert_raises(Circadex::Config::Error) { Circadex::Config.load(path) }
+    end
+  end
+
   def test_example_config_is_valid
     config = Circadex::Config.load(File.expand_path("../config.example.yml", __dir__))
 
