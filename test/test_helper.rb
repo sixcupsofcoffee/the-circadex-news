@@ -22,9 +22,20 @@ class FakeHttp
 
   def get(url, **)
     @requests << url
-    body = @responses.find { |pattern, _| url.start_with?(pattern) }&.last
-    raise Circadex::Http::Error, "GET #{url} returned 404" if body.nil?
+    lookup(url)
+  end
 
-    body
+  def post_json(url, payload, **)
+    @requests << url
+    lookup(url, payload)
+  end
+
+  private
+
+  def lookup(url, payload = nil)
+    body = @responses.find { |pattern, _| url.start_with?(pattern) }&.last
+    raise Circadex::Http::Error, "#{url} returned 404" if body.nil?
+
+    body.respond_to?(:call) ? body.call(payload) : body
   end
 end

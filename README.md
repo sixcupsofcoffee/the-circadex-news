@@ -32,13 +32,18 @@ If a source is unreachable, the paper still builds and the failure is listed on 
 1. Create an app-specific password at account.apple.com (Sign-In and Security).
 2. Store both values in the Keychain:
    ```sh
-   security add-generic-password -s circadex-news -a ICLOUD_USER -w 'you@icloud.com'
-   security add-generic-password -s circadex-news -a ICLOUD_PASSWORD -w 'xxxx-xxxx-xxxx-xxxx'
+   security add-generic-password -s circadex-news -a ICLOUD_USER -w
+   security add-generic-password -s circadex-news -a ICLOUD_PASSWORD -w
    ```
+   Leaving off the value makes the command prompt for it, so it stays out of your shell history.
    Environment variables `CIRCADEX_ICLOUD_USER` and `CIRCADEX_ICLOUD_PASSWORD` work too.
 3. Set `mail.enabled: true` in `config.yml`.
 
 Mail is opened read-only and never marked as read. Messages are sorted by rules: senders in `priority_senders` and subjects matching alert keywords (bills, security notices) come first, then personal mail, then newsletters; promotions are counted and skipped. Nothing from your mailbox leaves your machine.
+
+## Analytics setup
+
+Cloudflare Web Analytics sites are listed automatically. Create an API token with *Account > Account Analytics > Read* and *Account > Account Settings > Read*, store `CLOUDFLARE_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` in the Keychain the same way as the mail credentials, and set `analytics.enabled: true`. The report shows yesterday's page views and visits against the day before and the previous seven days, with top pages and referrers. Cloudflare samples this data, so counts are estimates.
 
 ## Sources
 
@@ -47,7 +52,8 @@ Mail is opened read-only and never marked as read. Messages are sorted by rules:
 | Weather (Open-Meteo) | done |
 | News and local news (RSS/Atom, full text where the feed or page allows it) | done |
 | iCloud mail since midnight (read-only IMAP, rule-based sorting) | done, see below |
-| Analytics, comics, crossword, Sunday edition, tablet upload | planned |
+| Cloudflare Web Analytics (yesterday vs. recent days) | done, see below |
+| Comics, crossword, Sunday edition, tablet upload | planned |
 
 Only fetch content you are entitled to read. Feeds and pages are requested once per run with an identifying User-Agent.
 

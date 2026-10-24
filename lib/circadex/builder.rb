@@ -2,10 +2,11 @@ module Circadex
   # Gathers every source into an Edition. A failing source never stops the paper;
   # it is noted at the back instead.
   class Builder
-    def initialize(config, http: Http, mail_client: nil, now: Time.now)
+    def initialize(config, http: Http, mail_client: nil, analytics_client: nil, now: Time.now)
       @config = config
       @http = http
       @mail_client = mail_client
+      @analytics_client = analytics_client
       @now = now
     end
 
@@ -20,13 +21,29 @@ module Circadex
 
       mail = guard("Mail", notices) { mail_digest } if mail_enabled?
 
-      Edition.new(date: date, forecast: forecast, sections: sections, mail: mail, notices: notices)
+      analytics = guard("Analytics", notices) { analytics_digest } if analytics_enabled?
+
+      Edition.new(date: date, forecast: forecast, sections: sections, mail: mail, analytics: analytics, notices: notices)
     end
 
     private
 
     def mail_enabled?
       @config["mail"] && @config["mail"]["enabled"]
+    end
+
+    def analytics_enabled?
+      @config["analytics"] && @config["analytics"]["enabled"]
+    end
+
+    def analytics_digest
+      Sources::Analytics.new(@config["analytics"], client: @analytics_client || cloudflare_client, now: @now).digest
+    end
+
+    def cloudflare_client
+      Sources::CloudflareClient.new(
+        account_id: Secrets.fetch("CLOUDFLARE_ACCOUNT_ID"), token: Secrets.fetch("CLOUDFLARE_TOKEN"), http: @http
+      )
     end
 
     def mail_digest

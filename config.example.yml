@@ -31,6 +31,18 @@ mail:
   # alert_keywords: ["bill", "payment due", "security alert"]
   # promo_keywords: ["% off", "sale", "coupon"]
 
+# Yesterday's traffic from Cloudflare Web Analytics. Create an API token (My Profile ->
+# API Tokens) with Account > Account Analytics > Read and Account > Account Settings > Read,
+# then store it and your account ID with
+#   security add-generic-password -s circadex-news -a CLOUDFLARE_TOKEN -w
+#   security add-generic-password -s circadex-news -a CLOUDFLARE_ACCOUNT_ID -w
+# (or CIRCADEX_CLOUDFLARE_TOKEN / CIRCADEX_CLOUDFLARE_ACCOUNT_ID). All Web Analytics sites in
+# the account are included unless you list some here (then the Settings permission is not needed).
+analytics:
+  enabled: false
+  # sites:
+  #   - { name: example.com, tag: 0123456789abcdef0123456789abcdef }
+
 news:
   max_age_hours: 36
   max_paragraphs: 14

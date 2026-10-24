@@ -31,6 +31,7 @@ module Circadex
       masthead(pdf, edition)
       weather(pdf, edition.forecast) if edition.forecast
       mail(pdf, edition.mail) if edition.mail
+      analytics(pdf, edition.analytics) if edition.analytics
       edition.sections.each { |section| news_section(pdf, section) }
       notes(pdf, edition.notices) unless edition.notices.empty?
 
@@ -113,6 +114,49 @@ module Circadex
 
     def room(pdf, points)
       pdf.start_new_page if pdf.cursor < points
+    end
+
+    def analytics(pdf, digest)
+      pdf.start_new_page
+      mark(pdf, "Site traffic")
+      section_header(pdf, "Site traffic")
+      pdf.text clean("#{digest.date.strftime('%A, %B %-d')}  \u2022  counts are Cloudflare estimates"), size: 9, style: :italic, color: MUTED
+      digest.sites.each { |site| analytics_site(pdf, site) }
+    end
+
+    def analytics_site(pdf, site)
+      room(pdf, 140)
+      pdf.move_down 12
+      pdf.font("Times-Bold") { pdf.text clean(site.name), size: 14 }
+      rule(pdf, 0.5)
+      pdf.move_down 4
+      return pdf.text(clean(site.notice), size: @body_pt, style: :italic) unless site.views
+
+      pdf.text clean("#{count(site.views)} page views  \u2022  #{count(site.visits)} visits"), size: @body_pt + 2
+      pdf.text clean(traffic_comparison(site)), size: 9, style: :italic, color: MUTED
+      analytics_list(pdf, "Top pages", site.pages)
+      analytics_list(pdf, "Referrers", site.referrers)
+      pdf.text clean(site.notice), size: 8.5, style: :italic, color: MUTED if site.notice
+    end
+
+    def traffic_comparison(site)
+      parts = [["the day before", site.prior_views], ["the 7-day average", site.average_views]].map do |label, base|
+        delta = Sources::Analytics.change(site.views, base)
+        delta ? "#{delta.positive? ? '+' : ''}#{delta}% vs #{label}" : nil
+      end
+      parts.compact.join("  \u2022  ")
+    end
+
+    def analytics_list(pdf, title, rows)
+      return if rows.empty?
+
+      pdf.move_down 5
+      pdf.font("Times-Bold") { pdf.text clean(title), size: @body_pt }
+      rows.each { |label, n| pdf.text clean("#{Text.truncate(label, 60)}   #{count(n)}"), size: @body_pt - 0.5 }
+    end
+
+    def count(number)
+      number.to_s.reverse.scan(/\d{1,3}/).join(",").reverse
     end
 
     def news_section(pdf, section)

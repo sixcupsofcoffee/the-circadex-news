@@ -84,6 +84,23 @@ class RendererTest < Minitest::Test
     end
   end
 
+  def test_renders_analytics_section
+    site = Circadex::AnalyticsSite.new(name: "blog.example.test", views: 12_345, visits: 4_000, prior_views: 10_000, average_views: 12_500.0,
+                                       pages: [["/", 300]], referrers: [["news.ycombinator.com", 80]], notice: nil)
+    down = Circadex::AnalyticsSite.new(name: "shop.example.test", pages: [], referrers: [], notice: "Analytics unavailable for this site.")
+    digest = Circadex::AnalyticsDigest.new(date: Date.new(2026, 10, 23), sites: [site, down])
+    render(Circadex::Edition.new(date: Date.new(2026, 10, 24), forecast: nil, sections: [], analytics: digest, notices: [])) do |reader, _|
+      text = reader.pages.map(&:text).join("\n")
+
+      assert_includes text, "SITE TRAFFIC"
+      assert_includes text, "12,345 page views"
+      assert_includes text, "+23% vs the day before"
+      assert_includes text, "-1% vs the 7-day average"
+      assert_includes text, "news.ycombinator.com"
+      assert_includes text, "Analytics unavailable for this site."
+    end
+  end
+
   def test_renders_without_forecast
     render(Circadex::Edition.new(date: Date.new(2026, 10, 24), forecast: nil, sections: [], notices: [])) do |reader, _|
       assert_equal 1, reader.page_count

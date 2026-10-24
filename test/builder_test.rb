@@ -54,4 +54,23 @@ class BuilderTest < Minitest::Test
 
     assert_nil edition.mail
   end
+
+  def test_analytics_failure_is_a_notice
+    cfg = Circadex::Config.new(config.to_h.merge("analytics" => { "enabled" => true }))
+    Circadex::Secrets.stub(:keychain, nil) do
+      edition = Circadex::Builder.new(cfg, http: FakeHttp.new({})).build(Date.new(2026, 10, 24))
+
+      assert_nil edition.analytics
+      assert(edition.notices.any? { |n| n.start_with?("Analytics could not be loaded") })
+    end
+  end
+
+  def test_analytics_included_when_enabled
+    client = Object.new
+    def client.sites = []
+    cfg = Circadex::Config.new(config.to_h.merge("analytics" => { "enabled" => true }))
+    edition = Circadex::Builder.new(cfg, http: FakeHttp.new({}), analytics_client: client).build(Date.new(2026, 10, 24))
+
+    assert_empty edition.analytics.sites
+  end
 end
