@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Example Atom</title>
+  <entry>
+    <title>Atom entry</title>
+    <link rel="alternate" href="https://example.test/atom-1"/>
+    <author><name>Sam Writer</name></author>
+    <published>2026-10-24T08:00:00-04:00</published>
+    <updated>2026-10-24T09:00:00-04:00</updated>
+    <summary>Short summary text.</summary>
+  </entry>
+</feed>

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>Example Wire</title>
+    <item>
+      <title>City council &amp; mayor reach budget deal</title>
+      <link>https://example.test/budget</link>
+      <dc:creator>Pat Reporter</dc:creator>
+      <pubDate>Sat, 24 Oct 2026 09:30:00 -0400</pubDate>
+      <description>&lt;p&gt;A deal was struck late Friday.&lt;/p&gt;</description>
+      <content:encoded><![CDATA[<p>The city council and the mayor reached a budget agreement late on Friday after weeks of negotiation over school funding and road repair.</p><p>Negotiators from both sides described the talks as tense but productive, noting that the agreement preserves funding for after-school programs while deferring a decision on the new library branch until the spring.</p><p>The compromise raises the property tax rate by a small amount and sets aside new money for bridge inspections, officials said.</p><p>Residents who attended the public hearing earlier this month said they were relieved a shutdown of city services had been avoided, though several voiced concern about the long-term cost of the pension obligations.</p><p>The full council is expected to vote on Tuesday evening at its regular meeting in city hall.</p>]]></content:encoded>
+    </item>
+    <item>
+      <title>Storm headed for the coast</title>
+      <link>https://example.test/storm</link>
+      <pubDate>Sat, 24 Oct 2026 07:00:00 -0400</pubDate>
+      <description>Heavy rain is expected Sunday.</description>
+    </item>
+    <item>
+      <title>No link here</title>
+    </item>
+  </channel>
+</rss>

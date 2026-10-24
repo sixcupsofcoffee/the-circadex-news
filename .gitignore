@@ -1,0 +1,16 @@
+# local configuration and secrets
+/config.yml
+/config.local.yml
+.env
+*.key
+
+# generated output and caches
+/output/
+/cache/
+/log/
+*.pdf
+
+# ruby
+/.bundle/
+/vendor/bundle/
+.DS_Store
