@@ -4,15 +4,15 @@ require "base64"
 class ComicsTest < Minitest::Test
   PNG = Base64.decode64("iVBORw0KGgoAAAANSUhEUgAAABgAAAAICAIAAABsw6g0AAAAHklEQVR4nGM8YaPBQA3ARBVTqGkQ1QDj8A0jqhkEAA/mAmW2A+vsAAAAAElFTkSuQmCC")
   GIF = Base64.decode64("R0lGODdhGAAIAIAAAAAAAAAAACwAAAAAGAAIAAAIIAABCBxIsKDBgwgTKlxoMIDDhxAjSnzIsKLFixgzJgwIADs=")
-  PAGE_URL = "https://www.gocomics.com/peanuts".freeze
-  IMAGE_URL = "https://featureassets.gocomics.com/assets/abc123".freeze
+  PAGE_URL = "https://www.arcamax.com/thefunnies/peanuts/".freeze
+  IMAGE_URL = "https://www.arcamax.com/newspics/12/1234/123456.gif".freeze
 
   def page(image_url = IMAGE_URL)
     %(<html><head><meta property="og:image" content="#{image_url}"></head><body></body></html>)
   end
 
-  def config(*slugs)
-    { "strips" => slugs.map { |s| { "name" => s.capitalize, "slug" => s } } }
+  def config(*slugs, source: nil)
+    { "strips" => slugs.map { |s| { "name" => s.capitalize, "slug" => s }.merge(source ? { "source" => source } : {}) } }
   end
 
   def digest(responses, strips = ["peanuts"], converter: ->(_) { nil })
@@ -47,6 +47,49 @@ class ComicsTest < Minitest::Test
     strip = digest({ PAGE_URL => page("https://evil.example.test/x.png"), "https://evil.example.test/" => PNG }).strips.first
 
     assert_nil strip.image
+  end
+
+  def test_finds_image_by_alt_text_and_resolves_relative_urls
+    html = '<html><body><img src="/logo.png" alt="logo"><img src="/newspics/1/2/3.gif" alt="Peanuts for today"></body></html>'
+    strip = digest({ PAGE_URL => html, "https://www.arcamax.com/newspics/1/2/3.gif" => PNG }).strips.first
+
+    assert_equal PNG, strip.image
+  end
+
+  def test_finds_image_by_strip_like_path_when_alt_is_missing
+    html = '<html><body><img src="//www.arcamax.com/newspics/9/9/9.png"></body></html>'
+    strip = digest({ PAGE_URL => html, "https://www.arcamax.com/newspics/9/9/9.png" => PNG }).strips.first
+
+    assert_equal PNG, strip.image
+  end
+
+  def test_gocomics_source_uses_its_own_page_address
+    gc_page = "https://www.gocomics.com/peanuts"
+    gc_image = "https://featureassets.gocomics.com/assets/abc123.png"
+    http = FakeHttp.new(gc_page => page(gc_image), gc_image => PNG)
+    strip = Circadex::Sources::Comics.new(config("peanuts", source: "gocomics"), http: http).digest(Date.new(2026, 10, 24)).strips.first
+
+    assert_equal PNG, strip.image
+    assert_equal [gc_page, gc_image], http.requests
+  end
+
+  def test_unknown_source_gives_notice
+    strip = Circadex::Sources::Comics.new(config("peanuts", source: "nope"), http: FakeHttp.new({})).digest(Date.new(2026, 10, 24)).strips.first
+
+    assert_equal "Unavailable today.", strip.notice
+  end
+
+  def test_missing_image_logs_what_the_page_contained
+    io = StringIO.new
+    original = Circadex.instance_variable_get(:@logger)
+    Circadex.instance_variable_set(:@logger, Logger.new(io, level: Logger::WARN))
+    digest({ PAGE_URL => '<html><head><title>A Page</title></head><body><img src="/x/banner.jpg"></body></html>' })
+
+    assert_match(/1 images/, io.string)
+    assert_match(%r{/x/banner\.jpg}, io.string)
+    assert_match(/og:image absent/, io.string)
+  ensure
+    Circadex.instance_variable_set(:@logger, original)
   end
 
   def test_one_failing_strip_does_not_stop_the_others

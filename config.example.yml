@@ -43,20 +43,16 @@ analytics:
   # sites:
   #   - { name: example.com, tag: 0123456789abcdef0123456789abcdef }
 
-# Daily strips, fetched once a day for personal reading. GoComics pages are read for the
-# strip image; if the site starts refusing requests, comics are simply left out of that day's
-# paper. Images that are not JPEG/PNG are converted with `sips` (built into macOS).
+# Daily strips, fetched once a day for personal reading. The default source is ArcaMax
+# (arcamax.com/thefunnies/<slug>/); set `source: gocomics` on a strip to read GoComics instead.
+# If a site refuses the request, that strip shows "Unavailable today" and the rest of the paper
+# is unaffected. Images that are not JPEG/PNG are converted with `sips` (built into macOS).
 comics:
   enabled: false
   strips:
     - { name: Peanuts, slug: peanuts }
     - { name: Calvin and Hobbes, slug: calvinandhobbes }
     - { name: Garfield, slug: garfield }
-
-# The Guardian's free Quick crossword, drawn as a grid with clues for pen solving.
-crossword:
-  enabled: false
-  # number: 17101   # use a specific puzzle instead of the latest one
 
 news:
   max_age_hours: 36

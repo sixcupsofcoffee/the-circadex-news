@@ -47,7 +47,7 @@ Cloudflare Web Analytics sites are listed automatically. Create an API token wit
 
 ## Comics setup
 
-Set `comics.enabled: true` and list strips by their GoComics slug (the last part of `gocomics.com/<slug>`). Each run fetches today's strip once. Strips are copyrighted and meant for your own reading: images stay in memory and the PDF, and nothing is cached in the repository. GIF and WebP strips are converted with `sips` on macOS (or ImageMagick elsewhere).
+Set `comics.enabled: true` and list strips by slug, the last part of the strip's page address (for example `arcamax.com/thefunnies/garfield/` is `garfield`). ArcaMax is the default source; add `source: gocomics` to a strip to use GoComics. Each run fetches today's strip once. Strips are copyrighted and meant for your own reading: images stay in memory and the PDF, and nothing is cached in the repository. GIF and WebP strips are converted with `sips` on macOS (or ImageMagick elsewhere).
 
 ## Sources
 
@@ -57,7 +57,7 @@ Set `comics.enabled: true` and list strips by their GoComics slug (the last part
 | News and local news (RSS/Atom, full text where the feed or page allows it) | done |
 | iCloud mail since midnight (read-only IMAP, rule-based sorting) | done, see below |
 | Cloudflare Web Analytics (yesterday vs. recent days) | done, see below |
-| Daily comics (GoComics strips; GIF/WebP converted with `sips`) | done, see below |
+| Daily comics (ArcaMax or GoComics; GIF/WebP converted with `sips`) | done, see below |
 | Guardian Quick crossword (grid and clues, no solutions) | done |
 | Sunday edition, tablet upload | planned |
 
