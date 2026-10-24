@@ -47,7 +47,7 @@ Cloudflare Web Analytics sites are listed automatically. Create an API token wit
 
 ## Comics setup
 
-Set `comics.enabled: true` and list strips by slug, the last part of the strip's page address (for example `arcamax.com/thefunnies/garfield/` is `garfield`). ArcaMax is the default source; add `source: gocomics` to a strip to use GoComics. Each run fetches today's strip once. Strips are copyrighted and meant for your own reading: images stay in memory and the PDF, and nothing is cached in the repository. GIF and WebP strips are converted with `sips` on macOS (or ImageMagick elsewhere).
+Set `comics.enabled: true` and list strips by slug, the last part of the strip's page address (for example `arcamax.com/thefunnies/garfield/` is `garfield`). Calvin and Hobbes is not on ArcaMax. ArcaMax is the default source; add `source: gocomics` to a strip to use GoComics. Each run fetches today's strip once. Strips are copyrighted and meant for your own reading: images stay in memory and the PDF, and nothing is cached in the repository. GIF and WebP strips are converted with `sips` on macOS (or ImageMagick elsewhere).
 
 ## Sources
 

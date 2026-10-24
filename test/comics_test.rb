@@ -63,6 +63,25 @@ class ComicsTest < Minitest::Test
     assert_equal PNG, strip.image
   end
 
+  def test_prefers_the_strip_over_the_icon_even_when_the_icon_matches_first
+    icon = "https://www.arcamax.com/images/garfield-icon.gif"
+    strip = "https://resources.arcamax.com/newspics/397/39798/3979805.gif"
+    html = %(<html><head><meta property="og:image" content="#{icon}"></head><body>
+             <img src="#{icon}" alt="Garfield"><img src="#{strip}" alt="Garfield"></body></html>)
+    http = FakeHttp.new("https://www.arcamax.com/thefunnies/garfield/" => html, strip => PNG, icon => "icon bytes")
+    result = Circadex::Sources::Comics.new(config("garfield"), http: http, converter: ->(_) { nil }).digest(Date.new(2026, 10, 24)).strips.first
+
+    assert_equal PNG, result.image
+    refute_includes http.requests, icon
+  end
+
+  def test_strip_pattern_wins_even_without_alt_text
+    html = '<html><body><img src="/logo.png"><img src="https://resources.arcamax.com/newspics/1/22/333.gif"></body></html>'
+    http = FakeHttp.new(PAGE_URL => html, "https://resources.arcamax.com/newspics/1/22/333.gif" => PNG)
+
+    assert_equal PNG, Circadex::Sources::Comics.new(config("peanuts"), http: http).digest(Date.new(2026, 10, 24)).strips.first.image
+  end
+
   def test_gocomics_source_uses_its_own_page_address
     gc_page = "https://www.gocomics.com/peanuts"
     gc_image = "https://featureassets.gocomics.com/assets/abc123.png"

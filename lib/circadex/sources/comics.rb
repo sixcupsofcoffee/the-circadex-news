@@ -15,6 +15,9 @@ module Circadex
       DEFAULT_SOURCE = "arcamax".freeze
       SLUG = /\A[a-z0-9-]+\z/
       IMAGE_PATH = /\.(gif|jpe?g|png|webp)(\?|\z)/i
+      # ArcaMax strip images look like resources.arcamax.com/newspics/397/39798/3979805.gif;
+      # the page's preview image and other pictures are usually just the strip's icon.
+      STRIP_PATH = %r{/newspics/\d+/\d+/\d+\.(gif|jpe?g|png|webp)}i
 
       def initialize(config, http: Http, converter: ImageFile.method(:convert))
         @config = config
@@ -55,13 +58,18 @@ module Circadex
         ImageFile.printable(bytes, converter: @converter) || raise(Error, "unsupported image format")
       end
 
-      # Prefers the page's og:image, then an <img> whose alt text names the strip,
-      # then any other image on the site's own host that looks like a strip.
+      # Prefers images whose address has the strip pattern (and whose alt text names the
+      # strip), then falls back to the page's og:image, alt text, and strip-like folders.
       def find_image(doc, page_url, source, name)
-        candidates = []
-        candidates << doc.at_css('meta[property="og:image"]')&.[]("content")
         images = doc.css("img[src]")
-        candidates += images.select { |img| img["alt"].to_s.downcase.include?(name.to_s.downcase) }.map { |img| img["src"] }
+        named = ->(img) { img["alt"].to_s.downcase.include?(name.to_s.downcase) }
+        strips = images.select { |img| img["src"].to_s.match?(STRIP_PATH) }
+
+        candidates = []
+        candidates += strips.select(&named).map { |img| img["src"] }
+        candidates += strips.map { |img| img["src"] }
+        candidates << doc.at_css('meta[property="og:image"]')&.[]("content")
+        candidates += images.select(&named).map { |img| img["src"] }
         candidates += images.select { |img| img["src"].to_s.match?(%r{/(newspics|comics|strips)/}i) }.map { |img| img["src"] }
 
         candidates.compact.filter_map { |src| absolute(page_url, src) }

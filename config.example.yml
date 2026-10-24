@@ -51,7 +51,6 @@ comics:
   enabled: false
   strips:
     - { name: Peanuts, slug: peanuts }
-    - { name: Calvin and Hobbes, slug: calvinandhobbes }
     - { name: Garfield, slug: garfield }
 
 news:
