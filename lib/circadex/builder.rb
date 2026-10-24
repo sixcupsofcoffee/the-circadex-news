@@ -19,13 +19,13 @@ module Circadex
         Sources::News.new(@config["news"], http: @http).sections
       end || []
 
-      mail = guard("Mail", notices) { mail_digest } if mail_enabled?
+      mail = guard("Mail", notices) { mail_digest } if enabled?("Mail", "mail")
 
-      analytics = guard("Analytics", notices) { analytics_digest } if analytics_enabled?
+      analytics = guard("Analytics", notices) { analytics_digest } if enabled?("Analytics", "analytics")
 
-      comics = guard("Comics", notices) { Sources::Comics.new(@config["comics"], http: @http).digest(date) } if comics_enabled?
+      comics = guard("Comics", notices) { Sources::Comics.new(@config["comics"], http: @http).digest(date) } if enabled?("Comics", "comics")
 
-      crossword = guard("Crossword", notices) { Sources::GuardianCrossword.new(@config["crossword"], http: @http).fetch } if crossword_enabled?
+      crossword = guard("Crossword", notices) { Sources::GuardianCrossword.new(@config["crossword"], http: @http).fetch } if enabled?("Crossword", "crossword")
 
       Edition.new(date: date, forecast: forecast, sections: sections, mail: mail, analytics: analytics, comics: comics, crossword: crossword,
                   notices: notices)
@@ -33,20 +33,11 @@ module Circadex
 
     private
 
-    def mail_enabled?
-      @config["mail"] && @config["mail"]["enabled"]
-    end
+    def enabled?(label, key)
+      return true if @config[key] && @config[key]["enabled"]
 
-    def crossword_enabled?
-      @config["crossword"] && @config["crossword"]["enabled"]
-    end
-
-    def comics_enabled?
-      @config["comics"] && @config["comics"]["enabled"]
-    end
-
-    def analytics_enabled?
-      @config["analytics"] && @config["analytics"]["enabled"]
+      Circadex.logger.info("#{label}: skipped (not enabled in config)")
+      false
     end
 
     def analytics_digest
@@ -54,9 +45,14 @@ module Circadex
     end
 
     def cloudflare_client
-      Sources::CloudflareClient.new(
-        account_id: Secrets.fetch("CLOUDFLARE_ACCOUNT_ID"), token: Secrets.fetch("CLOUDFLARE_TOKEN"), http: @http
-      )
+      account_id = Secrets.fetch("CLOUDFLARE_ACCOUNT_ID")
+      unless account_id.match?(/\A[0-9a-f]{32}\z/i)
+        raise Config::Error,
+              "CLOUDFLARE_ACCOUNT_ID should be the 32-character account ID from the Cloudflare dashboard " \
+              "(it may hold an API token instead)"
+      end
+
+      Sources::CloudflareClient.new(account_id: account_id, token: Secrets.fetch("CLOUDFLARE_TOKEN"), http: @http)
     end
 
     def mail_digest
@@ -73,7 +69,9 @@ module Circadex
     end
 
     def guard(name, notices)
-      yield
+      result = yield
+      Circadex.logger.info("#{name}: ok")
+      result
     rescue StandardError => e
       Circadex.logger.error("#{name}: #{e.class}: #{e.message}")
       notices << "#{name} could not be loaded today (#{e.message})."

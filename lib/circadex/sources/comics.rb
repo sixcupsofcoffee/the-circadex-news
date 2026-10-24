@@ -17,7 +17,9 @@ module Circadex
       end
 
       def digest(date)
-        ComicsDigest.new(date: date, strips: Array(@config["strips"]).map { |strip| fetch(strip) })
+        strips = Array(@config["strips"]).map { |strip| fetch(strip) }
+        Circadex.logger.info("Comics: #{strips.count(&:image)} of #{strips.size} strips loaded")
+        ComicsDigest.new(date: date, strips: strips)
       end
 
       private
@@ -30,7 +32,8 @@ module Circadex
         image = image_for(url)
         ComicStrip.new(name: strip["name"], image: image, url: url)
       rescue Http::Error, Error => e
-        Circadex.logger.warn("comic #{strip['name']}: #{e.message}")
+        hint = e.message.include?("returned 403") ? " (the site is refusing automated requests)" : ""
+        Circadex.logger.warn("comic #{strip['name']}: #{e.message}#{hint}")
         ComicStrip.new(name: strip["name"], notice: "Unavailable today.")
       end
 

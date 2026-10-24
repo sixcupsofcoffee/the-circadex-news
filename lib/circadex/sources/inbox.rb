@@ -39,6 +39,7 @@ module Circadex
         kept = %i[priority alert personal newsletter].flat_map { |c| grouped.fetch(c, []) }
         limit = @config["max_messages"].to_i.positive? ? @config["max_messages"].to_i : 60
 
+        Circadex.logger.info("Mail: #{parsed.size} messages since midnight, #{grouped.fetch(:promo, []).size} promotional skipped")
         build_digest(kept, grouped.fetch(:promo, []).size, limit)
       end
 

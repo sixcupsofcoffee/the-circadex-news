@@ -112,6 +112,14 @@ class AnalyticsTest < Minitest::Test
     assert_match(/Authentication error/, error.message)
   end
 
+  def test_http_errors_do_not_include_the_request_url
+    http = FakeHttp.new({})
+
+    error = assert_raises(Circadex::Sources::Analytics::Error) { client(http).sites }
+    assert_equal "Cloudflare request failed with status 404 (check CLOUDFLARE_ACCOUNT_ID)", error.message
+    refute_includes error.message, "acct123"
+  end
+
   def test_token_is_sent_only_as_header_never_in_url_or_errors
     http = FakeHttp.new(SITES_URL => "not json")
 

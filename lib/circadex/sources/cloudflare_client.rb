@@ -16,7 +16,7 @@ module Circadex
       def sites
         items = []
         (1..20).each do |page|
-          body = parse(@http.get("#{API}/accounts/#{@account_id}/rum/site_info/list?per_page=#{PER_PAGE}&page=#{page}", headers: auth))
+          body = parse(request { @http.get("#{API}/accounts/#{@account_id}/rum/site_info/list?per_page=#{PER_PAGE}&page=#{page}", headers: auth) })
           batch = Array(body["result"])
           items.concat(batch)
           break if batch.size < PER_PAGE
@@ -25,7 +25,7 @@ module Circadex
       end
 
       def graphql(query, variables = {})
-        body = parse(@http.post_json("#{API}/graphql", { query: query, variables: variables }, headers: auth))
+        body = parse(request { @http.post_json("#{API}/graphql", { query: query, variables: variables }, headers: auth) })
         errors = Array(body["errors"])
         raise Analytics::Error, "Cloudflare GraphQL error: #{errors.first['message']}" unless errors.empty?
 
@@ -33,6 +33,15 @@ module Circadex
       end
 
       private
+
+      # HTTP errors carry the request URL, which can contain an account ID, so keep it out of messages.
+      def request
+        yield
+      rescue Http::Error => e
+        status = e.message[/returned (\d{3})/, 1]
+        hint = status == "404" ? " (check CLOUDFLARE_ACCOUNT_ID)" : status == "403" || status == "401" ? " (check the token's permissions)" : ""
+        raise Analytics::Error, "Cloudflare request failed#{status ? " with status #{status}" : ''}#{hint}"
+      end
 
       def auth
         { "Authorization" => "Bearer #{@token}" }

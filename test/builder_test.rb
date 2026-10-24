@@ -88,4 +88,21 @@ class BuilderTest < Minitest::Test
     assert_nil edition.crossword
     assert(edition.notices.any? { |n| n.start_with?("Crossword could not be loaded") })
   end
+
+  def test_token_in_account_id_slot_is_rejected_without_leaking_it
+    token = "cfat_#{'a' * 40}"
+    cfg = Circadex::Config.new(config.to_h.merge("analytics" => { "enabled" => true }))
+    ENV["CIRCADEX_CLOUDFLARE_ACCOUNT_ID"] = token
+    ENV["CIRCADEX_CLOUDFLARE_TOKEN"] = "another-secret"
+    http = FakeHttp.new({})
+    edition = Circadex::Builder.new(cfg, http: http).build(Date.new(2026, 10, 24))
+
+    assert_nil edition.analytics
+    assert(edition.notices.any? { |n| n.include?("CLOUDFLARE_ACCOUNT_ID should be the 32-character") })
+    refute(edition.notices.any? { |n| n.include?(token) || n.include?("another-secret") })
+    refute(http.requests.any? { |u| u.include?(token) }, "no request should be made with a bad account ID")
+  ensure
+    ENV.delete("CIRCADEX_CLOUDFLARE_ACCOUNT_ID")
+    ENV.delete("CIRCADEX_CLOUDFLARE_TOKEN")
+  end
 end
