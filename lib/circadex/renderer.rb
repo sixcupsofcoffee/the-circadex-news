@@ -30,6 +30,7 @@ module Circadex
 
       masthead(pdf, edition)
       weather(pdf, edition.forecast) if edition.forecast
+      mail(pdf, edition.mail) if edition.mail
       edition.sections.each { |section| news_section(pdf, section) }
       notes(pdf, edition.notices) unless edition.notices.empty?
 
@@ -72,6 +73,46 @@ module Circadex
 
     def precip(day)
       day.precip && day.precip >= 20 ? "  •  #{day.precip}% chance of precipitation" : ""
+    end
+
+    def mail(pdf, digest)
+      pdf.start_new_page
+      mark(pdf, "Mail")
+      section_header(pdf, "Mail since midnight")
+      pdf.text clean(mail_summary(digest)), size: 9, style: :italic, color: MUTED
+      mail_group(pdf, "Needs attention", digest.attention, snippets: true)
+      mail_group(pdf, "Messages", digest.messages, snippets: true)
+      mail_group(pdf, "Newsletters", digest.newsletters, snippets: true)
+    end
+
+    def mail_summary(digest)
+      parts = ["#{digest.total} #{digest.total == 1 ? 'message' : 'messages'}"]
+      parts << "#{digest.skipped} promotional skipped" if digest.skipped.positive?
+      parts << "showing the newest only" if digest.truncated
+      parts.join("  \u2022  ")
+    end
+
+    def mail_group(pdf, title, messages, snippets:)
+      return if messages.empty?
+
+      room(pdf, 80)
+      pdf.move_down 10
+      pdf.font("Times-Bold") { pdf.text clean(title), size: 12 }
+      rule(pdf, 0.5)
+      pdf.move_down 4
+      messages.each { |message| mail_entry(pdf, message, snippets: snippets) }
+    end
+
+    def mail_entry(pdf, message, snippets:)
+      room(pdf, 60)
+      pdf.font("Times-Bold") { pdf.text clean(message.subject), size: @body_pt + 0.5 }
+      pdf.text clean("#{message.from}  \u2022  #{message.received.strftime('%-I:%M %p')}"), size: 8.5, style: :italic, color: MUTED
+      pdf.text clean(message.snippet), size: @body_pt - 0.5 if snippets && !message.snippet.to_s.empty?
+      pdf.move_down 6
+    end
+
+    def room(pdf, points)
+      pdf.start_new_page if pdf.cursor < points
     end
 
     def news_section(pdf, section)

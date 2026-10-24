@@ -2,6 +2,8 @@ source "https://rubygems.org"
 
 ruby ">= 3.1"
 
+gem "mail", "~> 2.8"
+gem "net-imap", "~> 0.4"
 gem "nokogiri", "~> 1.16"
 gem "prawn", "~> 2.5"
 

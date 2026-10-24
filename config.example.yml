@@ -16,6 +16,21 @@ weather:
   latitude: 41.824
   longitude: -71.413
 
+# iCloud mail since midnight. Credentials are NOT stored here: create an app-specific
+# password at account.apple.com, then store it with
+#   security add-generic-password -s circadex-news -a ICLOUD_USER -w <apple id email>
+#   security add-generic-password -s circadex-news -a ICLOUD_PASSWORD -w <app-specific password>
+# (or set CIRCADEX_ICLOUD_USER / CIRCADEX_ICLOUD_PASSWORD). Mail is never marked as read.
+mail:
+  enabled: false
+  max_messages: 60
+  # Mail from these senders is always shown, even if it looks promotional.
+  priority_senders:
+    - steampowered.com
+  # Optional overrides (regex fragments matched against the subject):
+  # alert_keywords: ["bill", "payment due", "security alert"]
+  # promo_keywords: ["% off", "sale", "coupon"]
+
 news:
   max_age_hours: 36
   max_paragraphs: 14

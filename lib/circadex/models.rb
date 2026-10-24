@@ -4,5 +4,7 @@ module Circadex
   Item = Struct.new(:title, :url, :source, :author, :published, :summary, :content_html, keyword_init: true)
   Story = Struct.new(:title, :url, :source, :byline, :published, :summary, :paragraphs, keyword_init: true)
   Section = Struct.new(:title, :stories, :briefs, :notice, keyword_init: true)
-  Edition = Struct.new(:date, :forecast, :sections, :notices, keyword_init: true)
+  MailMessage = Struct.new(:from, :address, :subject, :received, :snippet, :category, keyword_init: true)
+  MailDigest = Struct.new(:attention, :messages, :newsletters, :skipped, :total, :truncated, keyword_init: true)
+  Edition = Struct.new(:date, :forecast, :sections, :mail, :notices, keyword_init: true)
 end

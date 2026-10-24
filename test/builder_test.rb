@@ -30,4 +30,28 @@ class BuilderTest < Minitest::Test
     assert_equal 1, edition.sections.size
     assert_match(/No feeds could be reached/, edition.sections.first.notice)
   end
+
+  def test_mail_is_included_when_enabled
+    client = Class.new { def fetch_since(_) = [] }.new
+    cfg = Circadex::Config.new(config.to_h.merge("mail" => { "enabled" => true }))
+    edition = Circadex::Builder.new(cfg, http: FakeHttp.new({}), mail_client: client).build(Date.new(2026, 10, 24))
+
+    assert_equal 0, edition.mail.total
+  end
+
+  def test_mail_failure_is_a_notice_without_secrets
+    cfg = Circadex::Config.new(config.to_h.merge("mail" => { "enabled" => true }))
+    Circadex::Secrets.stub(:keychain, nil) do
+      edition = Circadex::Builder.new(cfg, http: FakeHttp.new({})).build(Date.new(2026, 10, 24))
+
+      assert_nil edition.mail
+      assert(edition.notices.any? { |n| n.start_with?("Mail could not be loaded") })
+    end
+  end
+
+  def test_mail_is_skipped_when_disabled
+    edition = Circadex::Builder.new(config, http: FakeHttp.new({})).build(Date.new(2026, 10, 24))
+
+    assert_nil edition.mail
+  end
 end

@@ -7,6 +7,7 @@ module Circadex
       "output_dir" => "output",
       "page" => { "width_in" => 7.07, "height_in" => 9.43, "margin_pt" => 30, "body_pt" => 10 },
       "weather" => nil,
+      "mail" => nil,
       "news" => { "max_age_hours" => 36, "max_paragraphs" => 14, "sections" => [] }
     }.freeze
 

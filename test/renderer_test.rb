@@ -70,6 +70,20 @@ class RendererTest < Minitest::Test
     end
   end
 
+  def test_renders_mail_section
+    msg = ->(subject, category) { Circadex::MailMessage.new(from: "Ann", address: "a@x.test", subject: subject, received: Time.parse("2026-10-24 03:00:00"), snippet: "Body text.", category: category) }
+    digest = Circadex::MailDigest.new(attention: [msg.("Bill due Friday", :alert)], messages: [msg.("Dinner?", :personal)],
+                                      newsletters: [msg.("Issue 42", :newsletter)], skipped: 3, total: 6, truncated: false)
+    render(Circadex::Edition.new(date: Date.new(2026, 10, 24), forecast: forecast, sections: [], mail: digest, notices: [])) do |reader, _|
+      text = reader.pages.map(&:text).join("\n")
+
+      assert_includes text, "MAIL SINCE MIDNIGHT"
+      assert_includes text, "6 messages"
+      assert_includes text, "3 promotional skipped"
+      %w[Needs\ attention Messages Newsletters Bill\ due\ Friday Dinner? Issue\ 42].each { |t| assert_includes text, t }
+    end
+  end
+
   def test_renders_without_forecast
     render(Circadex::Edition.new(date: Date.new(2026, 10, 24), forecast: nil, sections: [], notices: [])) do |reader, _|
       assert_equal 1, reader.page_count
