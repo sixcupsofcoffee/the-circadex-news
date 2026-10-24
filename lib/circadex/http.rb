@@ -9,16 +9,16 @@ module Circadex
 
     module_function
 
-    def get(url, headers: {}, redirects: 5, timeout: 20)
+    def get(url, headers: {}, redirects: 5, timeout: 20, binary: false)
       raise Error, "too many redirects for #{url}" if redirects.negative?
 
       uri = URI(url)
       response = perform(uri, Net::HTTP::Get.new(uri.request_uri, { "User-Agent" => USER_AGENT }.merge(headers)), timeout)
       case response
       when Net::HTTPSuccess
-        decode(response)
+        binary ? response.body.to_s.b : decode(response)
       when Net::HTTPRedirection
-        get(URI.join(url, response["location"]).to_s, headers: headers, redirects: redirects - 1, timeout: timeout)
+        get(URI.join(url, response["location"]).to_s, headers: headers, redirects: redirects - 1, timeout: timeout, binary: binary)
       else
         raise Error, "GET #{url} returned #{response.code}"
       end

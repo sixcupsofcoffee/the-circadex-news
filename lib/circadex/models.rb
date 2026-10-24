@@ -8,5 +8,8 @@ module Circadex
   MailDigest = Struct.new(:attention, :messages, :newsletters, :skipped, :total, :truncated, keyword_init: true)
   AnalyticsSite = Struct.new(:name, :views, :visits, :prior_views, :average_views, :pages, :referrers, :notice, keyword_init: true)
   AnalyticsDigest = Struct.new(:date, :sites, keyword_init: true)
-  Edition = Struct.new(:date, :forecast, :sections, :mail, :analytics, :notices, keyword_init: true)
+  ComicStrip = Struct.new(:name, :image, :url, :notice, keyword_init: true)
+  ComicsDigest = Struct.new(:date, :strips, keyword_init: true)
+  Crossword = Struct.new(:title, :setter, :date, :cols, :rows, :cells, :across, :down, keyword_init: true)
+  Edition = Struct.new(:date, :forecast, :sections, :mail, :analytics, :comics, :crossword, :notices, keyword_init: true)
 end

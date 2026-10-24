@@ -73,4 +73,19 @@ class BuilderTest < Minitest::Test
 
     assert_empty edition.analytics.sites
   end
+
+  def test_comics_failure_does_not_stop_the_paper
+    cfg = Circadex::Config.new(config.to_h.merge("comics" => { "enabled" => true, "strips" => [{ "name" => "Peanuts", "slug" => "peanuts" }] }))
+    edition = Circadex::Builder.new(cfg, http: FakeHttp.new({})).build(Date.new(2026, 10, 24))
+
+    assert_equal "Unavailable today.", edition.comics.strips.first.notice
+  end
+
+  def test_crossword_failure_becomes_a_notice
+    cfg = Circadex::Config.new(config.to_h.merge("crossword" => { "enabled" => true }))
+    edition = Circadex::Builder.new(cfg, http: FakeHttp.new({})).build(Date.new(2026, 10, 24))
+
+    assert_nil edition.crossword
+    assert(edition.notices.any? { |n| n.start_with?("Crossword could not be loaded") })
+  end
 end

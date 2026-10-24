@@ -45,6 +45,10 @@ Mail is opened read-only and never marked as read. Messages are sorted by rules:
 
 Cloudflare Web Analytics sites are listed automatically. Create an API token with *Account > Account Analytics > Read* and *Account > Account Settings > Read*, store `CLOUDFLARE_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` in the Keychain the same way as the mail credentials, and set `analytics.enabled: true`. The report shows yesterday's page views and visits against the day before and the previous seven days, with top pages and referrers. Cloudflare samples this data, so counts are estimates.
 
+## Comics setup
+
+Set `comics.enabled: true` and list strips by their GoComics slug (the last part of `gocomics.com/<slug>`). Each run fetches today's strip once. Strips are copyrighted and meant for your own reading: images stay in memory and the PDF, and nothing is cached in the repository. GIF and WebP strips are converted with `sips` on macOS (or ImageMagick elsewhere).
+
 ## Sources
 
 | Source | Status |
@@ -53,7 +57,9 @@ Cloudflare Web Analytics sites are listed automatically. Create an API token wit
 | News and local news (RSS/Atom, full text where the feed or page allows it) | done |
 | iCloud mail since midnight (read-only IMAP, rule-based sorting) | done, see below |
 | Cloudflare Web Analytics (yesterday vs. recent days) | done, see below |
-| Comics, crossword, Sunday edition, tablet upload | planned |
+| Daily comics (GoComics strips; GIF/WebP converted with `sips`) | done, see below |
+| Guardian Quick crossword (grid and clues, no solutions) | done |
+| Sunday edition, tablet upload | planned |
 
 Only fetch content you are entitled to read. Feeds and pages are requested once per run with an identifying User-Agent.
 

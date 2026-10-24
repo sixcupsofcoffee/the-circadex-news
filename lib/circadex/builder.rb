@@ -23,13 +23,26 @@ module Circadex
 
       analytics = guard("Analytics", notices) { analytics_digest } if analytics_enabled?
 
-      Edition.new(date: date, forecast: forecast, sections: sections, mail: mail, analytics: analytics, notices: notices)
+      comics = guard("Comics", notices) { Sources::Comics.new(@config["comics"], http: @http).digest(date) } if comics_enabled?
+
+      crossword = guard("Crossword", notices) { Sources::GuardianCrossword.new(@config["crossword"], http: @http).fetch } if crossword_enabled?
+
+      Edition.new(date: date, forecast: forecast, sections: sections, mail: mail, analytics: analytics, comics: comics, crossword: crossword,
+                  notices: notices)
     end
 
     private
 
     def mail_enabled?
       @config["mail"] && @config["mail"]["enabled"]
+    end
+
+    def crossword_enabled?
+      @config["crossword"] && @config["crossword"]["enabled"]
+    end
+
+    def comics_enabled?
+      @config["comics"] && @config["comics"]["enabled"]
     end
 
     def analytics_enabled?

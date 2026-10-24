@@ -1,4 +1,5 @@
 require "prawn"
+require "stringio"
 
 Prawn::Fonts::AFM.hide_m17n_warning = true
 
@@ -32,6 +33,8 @@ module Circadex
       weather(pdf, edition.forecast) if edition.forecast
       mail(pdf, edition.mail) if edition.mail
       analytics(pdf, edition.analytics) if edition.analytics
+      comics(pdf, edition.comics) if edition.comics
+      crossword(pdf, edition.crossword) if edition.crossword
       edition.sections.each { |section| news_section(pdf, section) }
       notes(pdf, edition.notices) unless edition.notices.empty?
 
@@ -157,6 +160,107 @@ module Circadex
 
     def count(number)
       number.to_s.reverse.scan(/\d{1,3}/).join(",").reverse
+    end
+
+    CELL_SIZES = [30, 28, 26, 24, 22, 20, 18].freeze
+    CLUE_SIZES = [9.5, 9, 8.5, 8].freeze
+
+    def crossword(pdf, puzzle)
+      pdf.start_new_page
+      mark(pdf, "Crossword")
+      section_header(pdf, "Crossword")
+      pdf.font("Times-Bold") { pdf.text clean(puzzle.title), size: 11 }
+      credit = ["The Guardian", puzzle.setter && "set by #{puzzle.setter}"].compact.join("  \u2022  ")
+      pdf.text clean(credit), size: 8.5, style: :italic, color: MUTED
+      pdf.move_down 8
+
+      column_width = (pdf.bounds.width - COLUMN_GAP) / 2.0
+      cell, size = crossword_fit(pdf, puzzle, column_width)
+      crossword_grid(pdf, puzzle, cell)
+      pdf.move_down 10
+      crossword_clues(pdf, puzzle, column_width, size)
+    end
+
+    def crossword_fit(pdf, puzzle, column_width)
+      cell_limit = (pdf.bounds.width / puzzle.cols).floor
+      CELL_SIZES.each do |cell|
+        next if cell > cell_limit
+
+        CLUE_SIZES.each do |size|
+          return [cell, size] if puzzle.rows * cell + 10 + clue_height(pdf, puzzle, column_width, size) <= pdf.cursor
+        end
+      end
+      [[CELL_SIZES.last, cell_limit].min, CLUE_SIZES.last]
+    end
+
+    def clue_height(pdf, puzzle, width, size)
+      [puzzle.across, puzzle.down].map do |clues|
+        heading = size + 8
+        heading + clues.sum { |number, text| pdf.height_of(clue_markup(number, text), width: width, size: size, inline_format: true) + 2 }
+      end.max
+    end
+
+    def crossword_grid(pdf, puzzle, cell)
+      left = (pdf.bounds.width - puzzle.cols * cell) / 2.0
+      top = pdf.cursor
+      pdf.line_width 0.8
+      puzzle.rows.times do |row|
+        puzzle.cols.times do |col|
+          x = left + col * cell
+          y = top - row * cell
+          if puzzle.cells.key?([col, row])
+            pdf.stroke_rectangle [x, y], cell, cell
+            number = puzzle.cells[[col, row]]
+            pdf.text_box number.to_s, at: [x + 2, y - 1.5], width: cell - 2, height: 8, size: 6.5 if number
+          else
+            pdf.fill_rectangle [x, y], cell, cell
+          end
+        end
+      end
+      pdf.fill_color INK
+      pdf.move_down puzzle.rows * cell
+    end
+
+    def crossword_clues(pdf, puzzle, column_width, size)
+      top = pdf.cursor
+      [["Across", puzzle.across, 0], ["Down", puzzle.down, column_width + COLUMN_GAP]].each do |title, clues, x|
+        pdf.bounding_box([x, top], width: column_width) do
+          pdf.font("Times-Bold") { pdf.text title, size: size + 2 }
+          pdf.move_down 2
+          clues.each do |number, text|
+            pdf.text clue_markup(number, text), size: size, inline_format: true
+            pdf.move_down 2
+          end
+        end
+      end
+    end
+
+    def clue_markup(number, text)
+      "<b>#{inline_escape(number)}</b> #{inline_escape(text)}"
+    end
+
+    def inline_escape(str)
+      clean(str).gsub("&", "&amp;").gsub("<", "&lt;").gsub(">", "&gt;")
+    end
+
+    def comics(pdf, digest)
+      pdf.start_new_page
+      mark(pdf, "Comics")
+      section_header(pdf, "Comics")
+      digest.strips.each { |strip| comic(pdf, strip) }
+    end
+
+    def comic(pdf, strip)
+      room(pdf, 200)
+      pdf.move_down 10
+      pdf.font("Times-Bold") { pdf.text clean(strip.name), size: 11 }
+      pdf.move_down 3
+      return pdf.text(clean(strip.notice || "Unavailable today."), size: @body_pt, style: :italic, color: MUTED) unless strip.image
+
+      pdf.image StringIO.new(strip.image), fit: [pdf.bounds.width, [pdf.cursor - 10, 340].min]
+      pdf.move_down 6
+    rescue Prawn::Errors::UnsupportedImageType
+      pdf.text clean("#{strip.name} could not be displayed today."), size: @body_pt, style: :italic, color: MUTED
     end
 
     def news_section(pdf, section)

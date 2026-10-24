@@ -9,6 +9,8 @@ module Circadex
       "weather" => nil,
       "mail" => nil,
       "analytics" => nil,
+      "comics" => nil,
+      "crossword" => nil,
       "news" => { "max_age_hours" => 36, "max_paragraphs" => 14, "sections" => [] }
     }.freeze
 
