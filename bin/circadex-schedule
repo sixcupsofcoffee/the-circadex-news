@@ -1,0 +1,38 @@
+#!/usr/bin/env ruby
+$LOAD_PATH.unshift File.expand_path("../lib", __dir__)
+require "circadex"
+require "optparse"
+
+config_path = "config.yml"
+OptionParser.new do |o|
+  o.banner = "Usage: circadex-schedule [options] install|uninstall|print"
+  o.on("-c", "--config PATH", "Config file (default: config.yml)") { |v| config_path = v }
+end.parse!(ARGV)
+
+command = ARGV.first
+unless %w[install uninstall print].include?(command)
+  warn "usage: circadex-schedule [--config PATH] install|uninstall|print"
+  exit 1
+end
+
+begin
+  config = Circadex::Config.load(config_path)
+  scheduler = Circadex::Scheduler.new(config, root: File.expand_path("..", __dir__), config_path: config_path)
+
+  case command
+  when "print"
+    puts scheduler.plist
+  when "install"
+    path = scheduler.install
+    time = format("%02d:%02d", config["schedule"]["hour"], config["schedule"]["minute"])
+    puts "Installed #{path}"
+    puts "The paper will build every day at #{time} (this Mac's local time). Log: #{scheduler.log_path}"
+    puts "If the Mac may be asleep then, wake it first with: sudo pmset repeat wakeorpoweron MTWRFSU #{format('%02d:%02d:00', config['schedule']['hour'], [config['schedule']['minute'] - 5, 0].max)}"
+  when "uninstall"
+    scheduler.uninstall
+    puts "Removed the scheduled job."
+  end
+rescue Circadex::Config::Error, Circadex::Shell::Error => e
+  warn "circadex-schedule: #{e.message}"
+  exit 1
+end

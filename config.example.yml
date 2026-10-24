@@ -53,6 +53,21 @@ comics:
     - { name: Peanuts, slug: peanuts }
     - { name: Garfield, slug: garfield }
 
+# Daily build time for `bin/circadex-schedule install`, in this Mac's local time.
+schedule:
+  hour: 5
+  minute: 45
+
+# Send each day's PDF to a reMarkable cloud folder with rmapi (github.com/ddvk/rmapi), which
+# must be installed and authorized once (run `rmapi`). Each day is a new document, so your
+# annotations are never overwritten. Set keep_days to delete editions older than that many days
+# (only documents named circadex-YYYY-MM-DD in this folder); leave it out to keep everything.
+remarkable:
+  enabled: false
+  folder: The Circadex
+  # keep_days: 14
+  # rmapi: /usr/local/bin/rmapi
+
 news:
   max_age_hours: 36
   max_paragraphs: 14

@@ -11,6 +11,8 @@ module Circadex
       "analytics" => nil,
       "comics" => nil,
       "crossword" => nil,
+      "remarkable" => nil,
+      "schedule" => { "hour" => 5, "minute" => 45 },
       "news" => { "max_age_hours" => 36, "max_paragraphs" => 14, "sections" => [] }
     }.freeze
 

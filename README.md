@@ -49,6 +49,18 @@ Cloudflare Web Analytics sites are listed automatically. Create an API token wit
 
 Set `comics.enabled: true` and list strips by slug, the last part of the strip's page address (for example `arcamax.com/thefunnies/garfield/` is `garfield`). Calvin and Hobbes is not on ArcaMax. ArcaMax is the default source; add `source: gocomics` to a strip to use GoComics. Each run fetches today's strip once. Strips are copyrighted and meant for your own reading: images stay in memory and the PDF, and nothing is cached in the repository. GIF and WebP strips are converted with `sips` on macOS (or ImageMagick elsewhere).
 
+## Daily schedule and tablet upload
+
+```sh
+bin/circadex-schedule print      # shows the launchd job without installing it
+bin/circadex-schedule install    # installs ~/Library/LaunchAgents/com.circadex.news.plist
+bin/circadex-schedule uninstall
+```
+
+The job runs `bin/circadex` every morning at the time in `schedule:` and logs to `~/Library/Logs/circadex.log`. The Mac must be awake and logged in (if it is asleep, launchd runs the job when it wakes); `sudo pmset repeat wakeorpoweron` can wake it just before.
+
+To send the PDF to a reMarkable, install [rmapi](https://github.com/ddvk/rmapi), run `rmapi` once to authorize it, and set `remarkable.enabled: true`. A failed upload never stops the build: the PDF is kept in `output/` and the error is logged. `bin/circadex --no-upload` builds without uploading.
+
 ## Sources
 
 | Source | Status |
@@ -59,7 +71,8 @@ Set `comics.enabled: true` and list strips by slug, the last part of the strip's
 | Cloudflare Web Analytics (yesterday vs. recent days) | done, see below |
 | Daily comics (ArcaMax or GoComics; GIF/WebP converted with `sips`) | done, see below |
 | Guardian Quick crossword (grid and clues, no solutions) | done |
-| Sunday edition, tablet upload | planned |
+| Tablet upload (rmapi) and daily launchd schedule | done, see above |
+| Sunday edition | planned |
 
 Only fetch content you are entitled to read. Feeds and pages are requested once per run with an identifying User-Agent.
 
